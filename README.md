@@ -265,7 +265,15 @@ Polling stops when `overall_status` is `done` or `failed`.
 3. **Domain-only input** is a reasonable constraint that simplifies security without meaningfully reducing usefulness.
 4. **Link accessibility uses HEAD requests** — faster and sufficient; falls back to GET if HEAD is rejected (405).
 5. **Internal vs external link classification** is based on comparing the link's host to the analyzed URL's host.
-6. **Login form detection** is heuristic — presence of `<input type="password">` within a `<form>`.
+6. **Login form detection** is heuristic — presence of `<input type="password">`, `autocomplete="current-password"`, or `name="pass"`/`name="password"` anywhere in the document.
+
+---
+
+## Known Limitations
+
+1. **Static HTML only** — The analyzer fetches raw HTML via HTTP and does not execute JavaScript. Sites that render their content entirely via JS (e.g. Facebook's login page) will appear to have no forms, headings, or links. This is a fundamental limitation of static HTML parsing.
+2. **Cloudflare / bot-protection** — Some sites (e.g. rozana.fm) use Cloudflare or similar services that block non-browser requests with 403 responses, regardless of the headers sent. These sites will be reported as unreachable.
+3. **No cookie or session handling** — The analyzer does not maintain cookies or follow authentication flows, so pages behind login walls cannot be analyzed.
 
 ---
 
@@ -278,3 +286,4 @@ Polling stops when `overall_status` is `done` or `failed`.
 5. **Auth + per-user history** — store past analyses per user
 6. **Webhook support** — notify an external URL when analysis is complete
 7. **Depth option** — allow crawling N levels deep from the submitted URL
+8. **Headless browser** — use a headless browser (e.g. via `chromedp` or `rod`) to render JavaScript before analysis, enabling detection of JS-rendered login forms and content on sites like Facebook

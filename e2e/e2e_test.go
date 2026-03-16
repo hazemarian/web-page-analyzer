@@ -54,25 +54,9 @@ func TestE2EAnalyzeAndPoll(t *testing.T) {
 	}
 
 	// Poll for completion
-	var finalBody string
-	deadline := time.Now().Add(60 * time.Second)
-	for time.Now().Before(deadline) {
-		resp, err := client.Get(base + "/result?url=https://example.com")
-		if err != nil {
-			t.Fatalf("GET /result failed: %v", err)
-		}
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		finalBody = string(body)
-		if strings.Contains(finalBody, "done") || strings.Contains(finalBody, "failed") {
-			break
-		}
-		time.Sleep(2 * time.Second)
-	}
-
-	if !strings.Contains(finalBody, "done") && !strings.Contains(finalBody, "failed") {
-		t.Fatal("analysis did not complete within timeout")
+	finalBody := pollForCompletion(t, client, base, "https://example.com")
+	if !strings.Contains(finalBody, "badge-done") {
+		t.Error("expected analysis to complete successfully")
 	}
 }
 
@@ -157,8 +141,8 @@ func TestE2EInvalidDomainFormat(t *testing.T) {
 
 	// Poll for result — pipeline should fail at URL validation
 	body := pollForCompletion(t, client, base, target)
-	if !strings.Contains(body, "failed") {
-		t.Errorf("expected 'failed' in result for invalid domain, got: %s", truncate(body, 200))
+	if !strings.Contains(body, "Error") {
+		t.Errorf("expected error in result for invalid domain, got: %s", truncate(body, 200))
 	}
 }
 
@@ -193,8 +177,8 @@ func TestE2EDuplicateSubmission(t *testing.T) {
 	// Submit first time and wait for completion
 	_, _ = client.PostForm(base+"/analyze", url.Values{"url": {target}})
 	firstBody := pollForCompletion(t, client, base, target)
-	if !strings.Contains(firstBody, "done") {
-		t.Fatal("first submission did not complete")
+	if !strings.Contains(firstBody, "badge-done") {
+		t.Fatal("first submission did not complete successfully")
 	}
 
 	// Submit again — should return cached result immediately
@@ -205,8 +189,9 @@ func TestE2EDuplicateSubmission(t *testing.T) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	// Cached result should already contain "done"
-	if !strings.Contains(string(body), "done") && !strings.Contains(string(body), "pending") {
+	s := string(body)
+	// Cached result should already show done or be polling
+	if !strings.Contains(s, "badge-done") && !strings.Contains(s, "badge-pending") {
 		t.Error("duplicate submission should return cached or pending result")
 	}
 }
@@ -254,7 +239,7 @@ func TestE2EURLWithPath(t *testing.T) {
 	_, _ = client.PostForm(base+"/analyze", url.Values{"url": {target}})
 	body := pollForCompletion(t, client, base, target)
 
-	if !strings.Contains(body, "done") && !strings.Contains(body, "failed") {
+	if !isComplete(body) {
 		t.Fatal("analysis did not complete")
 	}
 }
@@ -320,7 +305,20 @@ func TestE2EMethodNotAllowed(t *testing.T) {
 	}
 }
 
-// pollForCompletion polls GET /result until the result contains "done" or "failed",
+// isComplete returns true if the HTML result indicates analysis is finished.
+// Completion is detected by: badge-done, badge-failed, error article, or absence of polling trigger.
+func isComplete(body string) bool {
+	if strings.Contains(body, "badge-done") || strings.Contains(body, "badge-failed") {
+		return true
+	}
+	// Error view — has error article but no polling trigger
+	if strings.Contains(body, "Error") && !strings.Contains(body, "hx-trigger") {
+		return true
+	}
+	return false
+}
+
+// pollForCompletion polls GET /result until the result indicates completion,
 // or the timeout expires.
 func pollForCompletion(t *testing.T, client *http.Client, base, rawURL string) string {
 	t.Helper()
@@ -334,7 +332,7 @@ func pollForCompletion(t *testing.T, client *http.Client, base, rawURL string) s
 		resp.Body.Close()
 
 		s := string(body)
-		if strings.Contains(s, "done") || strings.Contains(s, "failed") {
+		if isComplete(s) {
 			return s
 		}
 		time.Sleep(2 * time.Second)

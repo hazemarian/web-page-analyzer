@@ -11,7 +11,9 @@
 make run
 ```
 
-This starts the app and Redis via Docker Compose. The application is available at `http://localhost:8080`.
+On first run this automatically creates a `.env` file from `.env.example`. Edit `.env` to change the port or other settings (e.g. `PORT=8081` if port 8080 is already in use).
+
+The application is available at `http://localhost:<PORT>` (default `8080`).
 
 ### Other commands
 

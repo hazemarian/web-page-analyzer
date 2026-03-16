@@ -1,7 +1,11 @@
 .PHONY: run build test test-e2e down logs lint deps
 
+## env: create .env from .env.example if it does not exist
+.env:
+	cp .env.example .env
+
 ## run: build image and start all services (app + redis)
-run:
+run: .env
 	docker compose up --build
 
 ## build: build the Docker image only

@@ -17,8 +17,9 @@ test:
 	go test $(shell go list ./... | grep -v /e2e) -v -race -count=1
 
 ## test-e2e: run end-to-end tests (requires running stack via make run)
-test-e2e:
-	go test ./e2e/ -v -race -count=1
+test-e2e: .env
+	export $$(grep -v '^\#' .env | xargs) && \
+	E2E_BASE_URL=http://localhost:$${PORT:-8080} go test ./e2e/ -v -race -count=1
 
 ## down: stop and remove all containers
 down:

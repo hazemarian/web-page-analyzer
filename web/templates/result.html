@@ -1,0 +1,87 @@
+{{- $polling := .Polling -}}
+<div id="result"
+  {{- if $polling}}
+  hx-get="/result?url={{.URL}}"
+  hx-trigger="every 1.5s"
+  hx-target="this"
+  hx-swap="outerHTML"
+  {{- end}}>
+
+  {{if .OverallError}}
+  <article class="step-card" style="border-color: #f5c2c7; margin-top: 1.5rem;">
+    <h4>Error</h4>
+    <p class="value" style="color: #842029;">{{.OverallError}}</p>
+  </article>
+
+  {{else}}
+  <p style="margin-top: 1rem;">
+    Status:
+    <span class="badge badge-{{.OverallStatus}}">{{.OverallStatus}}</span>
+    {{if $polling}}<span class="spinner"></span>{{end}}
+  </p>
+
+  <div class="step-grid">
+
+    <!-- HTML Version -->
+    <div class="step-card">
+      <h4>HTML Version <span class="badge badge-{{index .StepStatuses "html_version"}}">{{index .StepStatuses "html_version"}}</span></h4>
+      {{if .HTMLVersion}}
+        <p class="value">{{.HTMLVersion}}</p>
+      {{else if index .StepErrors "html_version"}}
+        <p style="color:#721c24;">{{index .StepErrors "html_version"}}</p>
+      {{else}}
+        <p class="value" style="color:#999;">—</p>
+      {{end}}
+    </div>
+
+    <!-- Title -->
+    <div class="step-card">
+      <h4>Page Title <span class="badge badge-{{index .StepStatuses "title"}}">{{index .StepStatuses "title"}}</span></h4>
+      {{if .Title}}
+        <p class="value">{{.Title}}</p>
+      {{else if index .StepErrors "title"}}
+        <p style="color:#721c24;">{{index .StepErrors "title"}}</p>
+      {{else}}
+        <p class="value" style="color:#999;">—</p>
+      {{end}}
+    </div>
+
+    <!-- Login Form -->
+    <div class="step-card">
+      <h4>Login Form <span class="badge badge-{{index .StepStatuses "login_form"}}">{{index .StepStatuses "login_form"}}</span></h4>
+      {{if eq (index .StepStatuses "login_form") "done"}}
+        <p class="value">{{if .HasLoginForm}}Yes{{else}}No{{end}}</p>
+      {{else}}
+        <p class="value" style="color:#999;">—</p>
+      {{end}}
+    </div>
+
+    <!-- Headings -->
+    <div class="step-card">
+      <h4>Headings <span class="badge badge-{{index .StepStatuses "headings"}}">{{index .StepStatuses "headings"}}</span></h4>
+      {{if .Headings}}
+        {{range $level, $count := .Headings}}
+          <div class="heading-row"><span>{{$level}}</span><strong>{{$count}}</strong></div>
+        {{end}}
+      {{else}}
+        <p class="value" style="color:#999;">—</p>
+      {{end}}
+    </div>
+
+    <!-- Links -->
+    <div class="step-card">
+      <h4>Links <span class="badge badge-{{index .StepStatuses "link_checker"}}">{{index .StepStatuses "link_checker"}}</span></h4>
+      {{if eq (index .StepStatuses "link_checker") "done"}}
+        <div class="heading-row"><span>Internal</span><strong>{{.LinkCounts.Internal}}</strong></div>
+        <div class="heading-row"><span>External</span><strong>{{.LinkCounts.External}}</strong></div>
+        <div class="heading-row"><span style="color:#842029;">Inaccessible</span><strong style="color:#842029;">{{.LinkCounts.Inaccessible}}</strong></div>
+      {{else if eq (index .StepStatuses "links") "done"}}
+        <p>Found <strong>{{.TotalLinks}}</strong> links, checking accessibility…</p>
+      {{else}}
+        <p class="value" style="color:#999;">—</p>
+      {{end}}
+    </div>
+
+  </div>
+  {{end}}
+</div>

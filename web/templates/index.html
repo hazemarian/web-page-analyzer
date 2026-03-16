@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webpage Analyzer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>
+    body { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+    .step-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .step-card { border: 1px solid var(--pico-muted-border-color); border-radius: 8px; padding: 1rem; }
+    .step-card h4 { margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pico-muted-color); }
+    .step-card .value { font-size: 1.1rem; font-weight: 600; }
+    .badge { display: inline-block; padding: 0.2em 0.6em; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-pending  { background: #f0f0f0; color: #666; }
+    .badge-done     { background: #d4edda; color: #155724; }
+    .badge-failed   { background: #f8d7da; color: #721c24; }
+    .heading-row { display: flex; justify-content: space-between; padding: 0.15rem 0; }
+    .spinner::after { content: " ⋯"; animation: blink 1s step-start infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Webpage Analyzer</h1>
+    <p>Enter a URL to analyze its structure, links, and metadata.</p>
+  </header>
+
+  <main>
+    <form hx-post="/analyze"
+          hx-target="#result"
+          hx-swap="innerHTML"
+          hx-indicator="#spinner">
+      <fieldset role="group">
+        <input type="text"
+               name="url"
+               placeholder="example.com/page"
+               required
+               autocomplete="off" />
+        <button type="submit">Analyze</button>
+      </fieldset>
+      <small id="spinner" class="htmx-indicator">Submitting…</small>
+    </form>
+
+    <div id="result"></div>
+  </main>
+</body>
+</html>
